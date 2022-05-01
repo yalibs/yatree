@@ -3,14 +3,14 @@
 #include <vector>
 
 template<typename T>
-class tree {
-public:
+struct tree {
     tree() = delete;
-    explicit tree(const T& r) : root(r), children{} {}
-    explicit tree(T&& r) : root{std::forward<T>(r)}, children{} {}
+    tree(const T& r) : node(r), children{} {}
+    tree(T&& r) : node{std::forward<T>(r)}, children{} {}
     template<typename... Args>
-    void emplace(Args&&... args) {
-        children.emplace_back(std::forward(args)...);
+    auto emplace(Args&&... args) -> tree<T>& {
+        children.emplace_back(std::forward<Args...>(args)...);
+        return *this;
     }
     auto concat(const tree<T>& element) -> tree<T>& {
         children.push_back(element);
@@ -19,23 +19,23 @@ public:
     auto operator+=(const tree<T>& element) -> tree<T>& {
         return concat(element);
     }
-    void apply(std::function<void(T&)> f) {
-        f(root);
+    void apply_dfs(std::function<void(T&)> f) {
+        f(node);
         for(auto& c : children)
-            c.apply(f);
+            c.apply_dfs(f);
     }
-    void apply(std::function<void(const T&)> f) const {
-        f(root);
+    void apply_dfs(std::function<void(const T&)> f) const {
+        f(node);
         for(auto& c : children)
-            c.apply(f);
+            c.apply_dfs(f);
     }
-    void apply(std::function<void(const tree<T>&)> f) const {
+    void apply_dfs(std::function<void(const tree<T>&)> f) const {
         f(*this);
         for(auto& c : children)
-            c.tree_apply(f);
+            c.apply_dfs(f);
     }
-private:
-    T root;
+
+    T node;
     std::vector<tree<T>> children;
 };
 
