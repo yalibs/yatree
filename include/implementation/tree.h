@@ -26,7 +26,7 @@
 
 template<typename T>
 struct tree {
-    tree() = delete;
+    tree() : node{}, children{} {}
     explicit tree(const T& r) : node(r), children{} {}
     explicit tree(T&& r) : node{std::forward<T>(r)}, children{} {}
     template<typename... Args>
