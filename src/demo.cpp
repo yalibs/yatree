@@ -24,8 +24,8 @@
 #include <stack>
 #include <tree>
 
-void print_tree(const tree<std::string>& tree);
-void print_tree_manually(const tree<std::string>& tree);
+void print_tree(const ya::tree<std::string>& tree);
+void print_tree_manually(const ya::tree<std::string>& tree);
 
 int main(int argc, char** argv) {
     auto printer_function = [](const std::string& node){ std::cout << node << " "; };
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     ////   +
     ////  / \
     //// 1   2
-    auto my_tree = tree<std::string>{"+"}
+    auto my_tree = ya::tree<std::string>{"+"}
                     .emplace("1")
                     .emplace("2");
     my_tree.apply_dfs(printer_function); // + 1 2
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     ////  3   +
     ////     / \
     ////    1   2
-    auto my_tree2 = tree<std::string>{"*"}
+    auto my_tree2 = ya::tree<std::string>{"*"}
                     .emplace("3")
                     .concat(my_tree);
     my_tree2.apply_dfs(printer_function); // * 3 + 1 2
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 //// Prints a tree as if it was regular arithmetic ( 1 + 2 + 3 )
 //// instead of reverse polish notation ( + 1 2 3 )
 std::stack<std::pair<std::string, unsigned int>> counter_stack{};
-void print_tree(const tree<std::string>& tree) {
+void print_tree(const ya::tree<std::string>& tree) {
     if(tree.children.empty()) {
         std::cout << tree.node;
         while(!counter_stack.empty()) {
@@ -83,7 +83,7 @@ void print_tree(const tree<std::string>& tree) {
 }
 
 //// A much easier implementation of print_tree
-void print_tree_manually(const tree<std::string>& tree) {
+void print_tree_manually(const ya::tree<std::string>& tree) {
     if(tree.children.empty()) {
         std::cout << tree.node;
         return;
