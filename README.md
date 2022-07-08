@@ -1,5 +1,5 @@
 # YA-TREE
-Yet another C/C++ tree implementation. A simple header-only implementation of a simple tree structure and a DFS algorithm.
+Yet another C/C++ tree implementation. Header-only implementation of a simple tree structure and a DFS algorithm.
 
 # Example Usage
 ```c++
