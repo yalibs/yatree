@@ -23,21 +23,27 @@
 #ifndef YATREE_TREE_H
 #define YATREE_TREE_H
 #include <vector>
+#include <optional>
+#include <functional> // std::reference_wrapper
 
 namespace ya {
     template<typename T>
     struct tree {
-        tree() : node{}, children{} {}
-        explicit tree(const T &r) : node(r), children{} {}
-        explicit tree(T &&r) : node{std::forward<T>(r)}, children{} {}
+        tree() : node{}, children{}, parent{} {}
+        explicit tree(const T &r) : node(r), children{}, parent{} {}
+        explicit tree(T &&r) : node{std::forward<T>(r)}, children{}, parent{} {}
 
         template<typename... Args>
         auto emplace(Args &&... args) -> tree<T> & {
             children.emplace_back(std::forward<Args...>(args)...);
+            for(auto& c : children)
+                c.set_parent(*this);
             return *this;
         }
         auto concat(const tree<T> &element) -> tree<T> & {
             children.push_back(element);
+            for(auto& c : children)
+                c.set_parent(*this);
             return *this;
         }
         auto operator+=(const tree<T> &element) -> tree<T> & {
@@ -62,6 +68,12 @@ namespace ya {
 
         T node;
         std::vector<tree<T>> children;
+        std::optional<std::reference_wrapper<tree<T>>> parent;
+
+    private:
+        void set_parent(std::reference_wrapper<tree<T>> new_parent) {
+            parent = new_parent;
+        }
     };
 
     template<typename T>
