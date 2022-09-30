@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 //// instead of reverse polish notation ( + 1 2 3 )
 std::stack<std::pair<std::string, unsigned int>> counter_stack{};
 void print_tree(const ya::tree<std::string>& tree) {
-    if(tree.children.empty()) {
+    if(tree.children().empty()) {
         std::cout << tree.node;
         while(!counter_stack.empty()) {
             if(--counter_stack.top().second <= 0) {
@@ -79,18 +79,18 @@ void print_tree(const ya::tree<std::string>& tree) {
         return;
     }
     std::cout << "(";
-    counter_stack.push(std::make_pair(tree.node, tree.children.size()));
+    counter_stack.push(std::make_pair(tree.node, tree.children().size()));
 }
 
 //// A much easier implementation of print_tree
 void print_tree_manually(const ya::tree<std::string>& tree) {
-    if(tree.children.empty()) {
+    if(tree.children().empty()) {
         std::cout << tree.node;
         return;
     }
     std::cout << "(";
     std::string sep{};
-    for(auto& c : tree.children) {
+    for(auto& c : tree.children()) {
         std::cout << sep;
         print_tree_manually(c);
         sep = tree.node;

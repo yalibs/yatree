@@ -29,20 +29,74 @@
 namespace ya {
     template<typename T>
     struct tree {
-        tree() : node{}, children{}, parent{} {}
-        explicit tree(const T &r) : node(r), children{}, parent{} {}
-        explicit tree(T &&r) : node{std::forward<T>(r)}, children{}, parent{} {}
+        // TODO: Out of scope iterator features
+        //       - implement swap
+        //       - implement operator=(const _left_df_interator&)
+        struct _left_df_iterator {
+            explicit _left_df_iterator() : data{nullptr} {}
+            explicit _left_df_iterator(tree<T>* e) : data{e} {}
+            void operator++() {
+                if(!data)
+                    throw std::out_of_range("tree iterator pointing to nothing");
+
+            }
+            void operator--() {
+                // TODO: Implement
+            }
+            void operator+=(size_t index) {
+                if(!data)
+                    throw std::out_of_range("tree iterator pointing to nothing");
+                for(size_t i = 0; i < index; i++) {
+                    if(data->end() == *this)
+                        throw std::out_of_range("access of non-existent tree nodes");
+                    this->operator++();
+                }
+            }
+            void operator-=(size_t index) {
+                if(!data)
+                    throw std::out_of_range("tree iterator pointing to nothing");
+                for(size_t i = 0; i < index; i++) {
+                    if(data->end() == *this)
+                        throw std::out_of_range("access of non-existent tree nodes");
+                    this->operator--();
+                }
+            }
+            auto operator*() -> tree<T>& {
+                if(!data)
+                    throw std::out_of_range("tree iterator pointing to nothing");
+                return *data;
+            }
+            auto operator==(const _left_df_iterator& other) -> bool {
+                return data == other.data;
+            }
+            auto operator!=(const _left_df_iterator& o) -> bool {
+                return !this->operator==(o);
+            }
+        private:
+            tree<T>* data;
+        };
+
+        tree() : node{}, _children{}, p{}, _begin{this}, _end{} {}
+        explicit tree(const T &r) : node(r), _children{}, p{}, _begin{this}, _end{} {}
+        explicit tree(T &&r) : node{std::forward<T>(r)}, _children{}, p{}, _begin{this}, _end{} {}
+
+        auto begin() const -> _left_df_iterator {
+            return _begin;
+        }
+        auto end() const -> _left_df_iterator {
+            return _end;
+        }
 
         template<typename... Args>
         auto emplace(Args &&... args) -> tree<T> & {
-            children.emplace_back(std::forward<Args...>(args)...);
-            for(auto& c : children)
+            _children.emplace_back(std::forward<Args...>(args)...);
+            for(auto& c : _children)
                 c.set_parent(*this);
             return *this;
         }
         auto concat(const tree<T> &element) -> tree<T> & {
-            children.push_back(element);
-            for(auto& c : children)
+            _children.push_back(element);
+            for(auto& c : _children)
                 c.set_parent(*this);
             return *this;
         }
@@ -52,27 +106,37 @@ namespace ya {
 
         void apply_dfs(std::function<void(T &)> f) {
             f(node);
-            for (auto &c: children)
+            for (auto &c: _children)
                 c.apply_dfs(f);
         }
         void apply_dfs(std::function<void(const T &)> f) const {
             f(node);
-            for (auto &c: children)
+            for (auto &c: _children)
                 c.apply_dfs(f);
         }
         void apply_dfs(std::function<void(const tree<T> &)> f) const {
             f(*this);
-            for (auto &c: children)
+            for (auto &c: _children)
                 c.apply_dfs(f);
+        }
+        auto parent() const -> std::optional<std::reference_wrapper<tree<T>>> {
+            return p;
+        }
+        auto children() const -> const std::vector<tree<T>>& {
+            return _children;
         }
 
         T node;
-        std::vector<tree<T>> children;
-        std::optional<std::reference_wrapper<tree<T>>> parent;
-
     private:
+        std::vector<tree<T>> _children;
+        std::optional<std::reference_wrapper<tree<T>>> p;
+        _left_df_iterator _begin, _end;
+
         void set_parent(std::reference_wrapper<tree<T>> new_parent) {
-            parent = new_parent;
+            p = new_parent;
+        }
+        void set_end() {
+
         }
     };
 
