@@ -77,34 +77,19 @@ namespace ya {
                     this->operator++();
                 return *this;
             }
-            auto operator--() -> _left_df_iterator& {
-                if(indices.empty())
-                    throw std::out_of_range("cannot decrement begin iterator");
-                if(indices[indices.size()-1]-1 >= 0) {
-                    indices[indices.size()-1]--; // TODO: find the bottom of indices.end()-1
-                    return *this;
-                }
-                while(indices[indices.size()-1]-1 < 0) {
-                    indices.erase(indices.end() - 1);
-                    auto i = operator*().end();
-                }
-
-            }
-            auto operator--(int) -> _left_df_iterator {
-                auto x = *this;
-                operator--();
-                return x;
-            }
-            void operator-=(size_t index) {
-                for(size_t i = 0; i < index; i++)
-                    this->operator--();
-            }
             auto operator*() const -> tree<T>& {
                 tree<T>* e = &root;
                 for(auto& i : indices) {
                     e = &(e->operator[](i));
                 }
                 return *e;
+            }
+            auto operator->() const -> tree<T>* {
+                tree<T>* e = &root;
+                for(auto& i : indices) {
+                    e = &(e->operator[](i));
+                }
+                return e;
             }
             auto operator==(const _left_df_iterator& other) const -> bool {
                 if(&root != &other.root)
