@@ -33,9 +33,9 @@ int main(int argc, char** argv) {
     ////   +
     ////  / \
     //// 1   2
-    auto my_tree = ya::tree<std::string>{"+"};
-    my_tree.emplace("1");
-    my_tree.emplace("2");
+    auto my_tree = ya::tree<std::string>{"+"}
+                   .emplace("1")
+                   .emplace("2");
     my_tree.apply_dfs(printer_function); // + 1 2
     std::cout << std::endl;
 
@@ -45,9 +45,9 @@ int main(int argc, char** argv) {
     ////  3   +
     ////     / \
     ////    1   2
-    auto my_tree2 = ya::tree<std::string>{"*"};
-    my_tree2.emplace("3");
-    my_tree2.concat(my_tree);
+    auto my_tree2 = ya::tree<std::string>{"*"}
+                    .emplace("3")
+                    .concat(my_tree);
     my_tree2.apply_dfs(printer_function); // * 3 + 1 2
     std::cout << std::endl;
 

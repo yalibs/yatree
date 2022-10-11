@@ -117,22 +117,27 @@ namespace ya {
         tree() : node{}, _children{}, p{nullptr} {}
         explicit tree(const T &r) : node(r), _children{}, p{nullptr} {}
         explicit tree(T &&r) : node{std::forward<T>(r)}, _children{}, p{nullptr} {}
-        tree(const tree<T>& o) : node{o.node}, _children{o.children()}, p{o.p} {}
-        tree(tree<T>&& o) noexcept : node{std::move(o.node)}, _children{std::move(o._children)}, p{std::move(o.p)} {}
+        tree(const tree<T>& o) : node{o.node}, _children{o.children()}, p{nullptr} {
+            for(auto& c : _children)
+                c.set_parent(this);
+        }
+        tree(tree<T>&& o) noexcept : node{std::move(o.node)}, _children{std::move(o._children)}, p{o.p} {}
         auto operator=(const tree<T>& o) -> tree<T>& {
             if(this == &o)
                 return *this;
             node = o.node;
             _children = o._children;
             p = nullptr;
+            for(auto& c : _children)
+                c.set_parent(this);
             return *this;
         }
         auto operator=(tree<T>&& o) noexcept -> tree<T>& {
             if(this == &o)
                 return *this;
-            node = o.node;
-            _children = o._children;
-            p = nullptr;
+            node = std::move(o.node);
+            _children = std::move(o._children);
+            p = o.p;
             return *this;
         }
 
@@ -143,17 +148,20 @@ namespace ya {
         }
 
         template<typename... Args>
-        void emplace(Args &&... args) {
+        auto emplace(Args &&... args) -> tree<T>& {
             _children.emplace_back(std::forward<Args...>(args)...).set_parent(this);
+            return *this;
         }
         // TODO: Naming of concat/emplace is bad
-        void concat(const tree<T> &element) {
+        auto concat(const tree<T>& element) -> tree<T>& {
             _children.push_back(element);
             (_children.end()-1)->set_parent(this);
+            return *this;
         }
-        void concat(tree<T>&& e) {
+        auto concat(tree<T>&& e) -> tree<T>& {
             _children.emplace_back(std::move(e));
             (_children.end()-1)->set_parent(this);
+            return *this;
         }
         auto operator+=(const tree<T> &element) -> tree<T> & {
             return concat(element);
