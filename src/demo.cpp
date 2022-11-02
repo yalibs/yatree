@@ -29,13 +29,13 @@ void print_tree_manually(const ya::tree<std::string>& tree);
 
 int main(int argc, char** argv) {
     auto printer_function = [](const std::string& node){ std::cout << node << " "; };
-    //// You can create trees constructor-pattern style
+    //// You can create trees with "emplace"
     ////   +
     ////  / \
     //// 1   2
     auto my_tree = ya::tree<std::string>{"+"}
-                    .emplace("1")
-                    .emplace("2");
+                   .emplace("1")
+                   .emplace("2");
     my_tree.apply_dfs(printer_function); // + 1 2
     std::cout << std::endl;
 
@@ -58,6 +58,11 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
     my_tree2.apply_dfs(print_tree); // also (3*(1+2)) - just a lot more manual stack maintenance
     std::cout << std::endl;
+
+    //// trees are even forward iterable in a DFS manner as well.
+    for(auto& n : my_tree2)
+        std::cout << n.node << " "; // * 3 + 1 2
+
     return 0;
 }
 
@@ -65,7 +70,7 @@ int main(int argc, char** argv) {
 //// instead of reverse polish notation ( + 1 2 3 )
 std::stack<std::pair<std::string, unsigned int>> counter_stack{};
 void print_tree(const ya::tree<std::string>& tree) {
-    if(tree.children.empty()) {
+    if(tree.    children().empty()) {
         std::cout << tree.node;
         while(!counter_stack.empty()) {
             if(--counter_stack.top().second <= 0) {
@@ -79,18 +84,18 @@ void print_tree(const ya::tree<std::string>& tree) {
         return;
     }
     std::cout << "(";
-    counter_stack.push(std::make_pair(tree.node, tree.children.size()));
+    counter_stack.push(std::make_pair(tree.node, tree.children().size()));
 }
 
 //// A much easier implementation of print_tree
 void print_tree_manually(const ya::tree<std::string>& tree) {
-    if(tree.children.empty()) {
+    if(tree.children().empty()) {
         std::cout << tree.node;
         return;
     }
     std::cout << "(";
     std::string sep{};
-    for(auto& c : tree.children) {
+    for(auto& c : tree.children()) {
         std::cout << sep;
         print_tree_manually(c);
         sep = tree.node;
