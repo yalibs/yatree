@@ -37,6 +37,54 @@ namespace ya {
         //       - implement operator=(const _left_df_iterator&)
         //       - implement operator--
         //       - end should be indices = [ root.children.size() ] <--
+        struct _left_df_const_iterator {
+            explicit _left_df_const_iterator(tree<T>& root) : root{root}, indices{} {}
+
+            _left_df_const_iterator(tree<T>& root, std::vector<size_t> indices) : root{root}, indices{std::move(indices)} {}
+
+            auto operator*() const -> tree<T>& {
+                tree<T>* e = &root;
+                for(auto& i : indices) {
+                    e = &(e->operator[](i));
+                }
+                return *e;
+            }
+
+            auto operator->() const -> tree<T>* {
+                tree<T>* e = &root;
+                for(auto& i : indices) {
+                    e = &(e->operator[](i));
+                }
+                return e;
+            }
+
+            auto operator==(const _left_df_const_iterator& other) const -> bool {
+                if(&root != &other.root)
+                    return false;
+                if(indices.size() != other.indices.size())
+                    return false;
+                for(auto i = 0; i < indices.size(); i++) {
+                    if(indices[i] != other.indices[i])
+                        return false;
+                }
+                return true;
+            }
+
+            auto operator!=(const _left_df_const_iterator& o) const -> bool {
+                return ! this->operator==(o);
+            }
+
+            auto operator=(const _left_df_const_iterator& o) -> _left_df_const_iterator& {
+                root = o.root;
+                indices = o.indices;
+                return *this;
+            }
+
+        private:
+            tree<T>& root;
+            std::vector<size_t> indices;
+        };
+
         struct _left_df_iterator {
             explicit _left_df_iterator(tree<T>& root) : root{root}, indices{} {}
 
@@ -174,8 +222,8 @@ namespace ya {
         }
 
         template<typename... Args>
-        auto put(Args&&... args) -> _left_df_iterator {
-            return _children.emplace_back(std::forward<Args...>(args)...).set_parent(this).begin();
+        auto put(Args&&... args) -> _left_df_const_iterator {
+            return _left_df_const_iterator{_children.emplace_back(std::forward<Args...>(args)...).set_parent(this)};
         }
 
         // TODO: Naming of concat/emplace is bad
