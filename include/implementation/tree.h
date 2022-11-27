@@ -173,20 +173,20 @@ namespace ya {
             std::vector<size_t> indices;
         };
 
-        tree() : node{}, _children{}, p{nullptr} {}
+        tree() : node{}, _children{}, p{nullptr}, parent_index{0} {}
 
-        explicit tree(const T &r) : node(r), _children{}, p{nullptr} {}
+        explicit tree(const T &r) : node(r), _children{}, p{nullptr}, parent_index{0} {}
 
-        explicit tree(T &&r) : node{std::forward<T>(r)}, _children{}, p{nullptr} {}
+        explicit tree(T &&r) : node{std::forward<T>(r)}, _children{}, p{nullptr}, parent_index{0} {}
 
-        tree(const tree<T>& o) : node{o.node}, _children{o.children()}, p{nullptr} {
-            for(auto& c : _children)
-                c.set_parent(this);
+        tree(const tree<T>& o) : node{o.node}, _children{o.children()}, p{nullptr}, parent_index{0} {
+            for(auto i = 0; i < _children.size(); i++)
+                _children[i].set_parent(this, i);
         }
 
-        tree(tree<T>&& o) noexcept : node{std::move(o.node)}, _children{std::move(o._children)}, p{o.p} {
-            for(auto& c : _children)
-                c.set_parent(this);
+        tree(tree<T>&& o) noexcept : node{std::move(o.node)}, _children{std::move(o._children)}, p{o.p}, parent_index{o.parent_index} {
+            for(auto i = 0; i < _children.size(); i++)
+                _children[i].set_parent(this, i);
         }
 
         auto operator=(const tree<T>& o) -> tree<T>& {
@@ -195,8 +195,8 @@ namespace ya {
             node = o.node;
             _children = o._children;
             p = nullptr;
-            for(auto& c : _children)
-                c.set_parent(this);
+            for(auto i = 0; i < _children.size(); i++)
+                _children[i].set_parent(this, i);
             return *this;
         }
 
@@ -217,30 +217,41 @@ namespace ya {
 
         template<typename... Args>
         auto emplace(Args &&... args) -> tree<T>& {
-            _children.emplace_back(std::forward<Args...>(args)...).set_parent(this);
+            _children.emplace_back(std::forward<Args...>(args)...).set_parent(this, _children.size()-1);
             return *this;
         }
 
         template<typename... Args>
-        auto put(Args&&... args) -> _left_df_const_iterator {
-            return _left_df_const_iterator{_children.emplace_back(std::forward<Args...>(args)...).set_parent(this)};
+        auto put(Args&&... args) -> _left_df_iterator {
+            return _children.emplace_back(std::forward<Args...>(args)...).set_parent(this, _children.size()-1).get_iterator();
         }
 
         // TODO: Naming of concat/emplace is bad
         auto concat(const tree<T>& element) -> tree<T>& {
             _children.push_back(element);
-            (_children.end()-1)->set_parent(this);
+            (_children.end()-1)->set_parent(this, _children.size()-1);
             return *this;
         }
 
         auto concat(tree<T>&& e) -> tree<T>& {
             _children.emplace_back(std::move(e));
-            (_children.end()-1)->set_parent(this);
+            (_children.end()-1)->set_parent(this, _children.size()-1);
             return *this;
         }
 
         auto operator+=(const tree<T> &element) -> tree<T> & {
             return concat(element);
+        }
+
+        auto get_iterator() -> _left_df_iterator {
+            std::vector<size_t> indices{};
+            auto* current_parent = this;
+            while(current_parent->p) {
+                indices.push_back(current_parent->parent_index);
+                current_parent = current_parent->p;
+            }
+            std::reverse(indices.begin(), indices.end());
+            return {*current_parent, indices};
         }
 
         void apply_dfs(std::function<void(T &)> f) {
@@ -282,9 +293,11 @@ namespace ya {
     private:
         children_t _children;
         tree<T>* p;
+        size_t parent_index;
 
-        auto set_parent(tree<T>* new_parent) -> tree<T>& {
+        auto set_parent(tree<T>* new_parent, size_t index) -> tree<T>& {
             p = new_parent;
+            parent_index = index;
             return *this;
         }
     };
