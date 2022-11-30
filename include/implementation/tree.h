@@ -173,6 +173,8 @@ namespace ya {
             std::vector<size_t> indices;
         };
 
+        using iterator = _left_df_iterator;
+
         tree() : node{}, _children{}, p{nullptr}, parent_index{0} {}
 
         explicit tree(const T &r) : node(r), _children{}, p{nullptr}, parent_index{0} {}
