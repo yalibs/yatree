@@ -37,9 +37,59 @@ namespace ya {
         //       - implement operator=(const _left_df_iterator&)
         //       - implement operator--
         //       - end should be indices = [ root.children.size() ] <--
+        struct _left_df_const_iterator {
+            explicit _left_df_const_iterator(tree<T>& root) : root{root}, indices{} {}
+
+            _left_df_const_iterator(tree<T>& root, std::vector<size_t> indices) : root{root}, indices{std::move(indices)} {}
+
+            auto operator*() const -> tree<T>& {
+                tree<T>* e = &root;
+                for(auto& i : indices) {
+                    e = &(e->operator[](i));
+                }
+                return *e;
+            }
+
+            auto operator->() const -> tree<T>* {
+                tree<T>* e = &root;
+                for(auto& i : indices) {
+                    e = &(e->operator[](i));
+                }
+                return e;
+            }
+
+            auto operator==(const _left_df_const_iterator& other) const -> bool {
+                if(&root != &other.root)
+                    return false;
+                if(indices.size() != other.indices.size())
+                    return false;
+                for(auto i = 0; i < indices.size(); i++) {
+                    if(indices[i] != other.indices[i])
+                        return false;
+                }
+                return true;
+            }
+
+            auto operator!=(const _left_df_const_iterator& o) const -> bool {
+                return ! this->operator==(o);
+            }
+
+            auto operator=(const _left_df_const_iterator& o) -> _left_df_const_iterator& {
+                root = o.root;
+                indices = o.indices;
+                return *this;
+            }
+
+        private:
+            tree<T>& root;
+            std::vector<size_t> indices;
+        };
+
         struct _left_df_iterator {
             explicit _left_df_iterator(tree<T>& root) : root{root}, indices{} {}
+
             _left_df_iterator(tree<T>& root, std::vector<size_t> indices) : root{root}, indices{std::move(indices)} {}
+
             auto operator++() -> _left_df_iterator& {
                 if(indices.empty()) {
                     if(root._children.empty())
@@ -67,16 +117,19 @@ namespace ya {
                 indices.push_back(root._children.size());
                 return *this;
             }
+
             auto operator++(int) -> _left_df_iterator {
                 auto x = *this;
                 operator++();
                 return x;
             }
+
             auto operator+=(size_t index) -> _left_df_iterator& {
                 for(size_t i = 0; i < index; i++)
                     this->operator++();
                 return *this;
             }
+
             auto operator*() const -> tree<T>& {
                 tree<T>* e = &root;
                 for(auto& i : indices) {
@@ -84,6 +137,7 @@ namespace ya {
                 }
                 return *e;
             }
+
             auto operator->() const -> tree<T>* {
                 tree<T>* e = &root;
                 for(auto& i : indices) {
@@ -91,6 +145,7 @@ namespace ya {
                 }
                 return e;
             }
+
             auto operator==(const _left_df_iterator& other) const -> bool {
                 if(&root != &other.root)
                     return false;
@@ -102,36 +157,51 @@ namespace ya {
                 }
                 return true;
             }
+
             auto operator!=(const _left_df_iterator& o) const -> bool {
                 return ! this->operator==(o);
             }
+
             auto operator=(const _left_df_iterator& o) -> _left_df_iterator& {
                 root = o.root;
                 indices = o.indices;
                 return *this;
             }
+
         private:
             tree<T>& root;
             std::vector<size_t> indices;
         };
-        tree() : node{}, _children{}, p{nullptr} {}
-        explicit tree(const T &r) : node(r), _children{}, p{nullptr} {}
-        explicit tree(T &&r) : node{std::forward<T>(r)}, _children{}, p{nullptr} {}
-        tree(const tree<T>& o) : node{o.node}, _children{o.children()}, p{nullptr} {
-            for(auto& c : _children)
-                c.set_parent(this);
+
+        using iterator = _left_df_iterator;
+
+        tree() : node{}, _children{}, p{nullptr}, parent_index{0} {}
+
+        explicit tree(const T &r) : node(r), _children{}, p{nullptr}, parent_index{0} {}
+
+        explicit tree(T &&r) : node{std::forward<T>(r)}, _children{}, p{nullptr}, parent_index{0} {}
+
+        tree(const tree<T>& o) : node{o.node}, _children{o.children()}, p{nullptr}, parent_index{0} {
+            for(auto i = 0; i < _children.size(); i++)
+                _children[i].set_parent(this, i);
         }
-        tree(tree<T>&& o) noexcept : node{std::move(o.node)}, _children{std::move(o._children)}, p{o.p} {}
+
+        tree(tree<T>&& o) noexcept : node{std::move(o.node)}, _children{std::move(o._children)}, p{o.p}, parent_index{o.parent_index} {
+            for(auto i = 0; i < _children.size(); i++)
+                _children[i].set_parent(this, i);
+        }
+
         auto operator=(const tree<T>& o) -> tree<T>& {
             if(this == &o)
                 return *this;
             node = o.node;
             _children = o._children;
             p = nullptr;
-            for(auto& c : _children)
-                c.set_parent(this);
+            for(auto i = 0; i < _children.size(); i++)
+                _children[i].set_parent(this, i);
             return *this;
         }
+
         auto operator=(tree<T>&& o) noexcept -> tree<T>& {
             if(this == &o)
                 return *this;
@@ -149,22 +219,41 @@ namespace ya {
 
         template<typename... Args>
         auto emplace(Args &&... args) -> tree<T>& {
-            _children.emplace_back(std::forward<Args...>(args)...).set_parent(this);
+            _children.emplace_back(std::forward<Args...>(args)...).set_parent(this, _children.size()-1);
             return *this;
         }
+
+        template<typename... Args>
+        auto put(Args&&... args) -> _left_df_iterator {
+            return _children.emplace_back(std::forward<Args...>(args)...).set_parent(this, _children.size()-1).get_iterator();
+        }
+
         // TODO: Naming of concat/emplace is bad
         auto concat(const tree<T>& element) -> tree<T>& {
             _children.push_back(element);
-            (_children.end()-1)->set_parent(this);
+            (_children.end()-1)->set_parent(this, _children.size()-1);
             return *this;
         }
+
         auto concat(tree<T>&& e) -> tree<T>& {
             _children.emplace_back(std::move(e));
-            (_children.end()-1)->set_parent(this);
+            (_children.end()-1)->set_parent(this, _children.size()-1);
             return *this;
         }
+
         auto operator+=(const tree<T> &element) -> tree<T> & {
             return concat(element);
+        }
+
+        auto get_iterator() -> _left_df_iterator {
+            std::vector<size_t> indices{};
+            auto* current_parent = this;
+            while(current_parent->p) {
+                indices.push_back(current_parent->parent_index);
+                current_parent = current_parent->p;
+            }
+            std::reverse(indices.begin(), indices.end());
+            return {*current_parent, indices};
         }
 
         void apply_dfs(std::function<void(T &)> f) {
@@ -172,26 +261,32 @@ namespace ya {
             for (auto &c: _children)
                 c.apply_dfs(f);
         }
+
         void apply_dfs(std::function<void(const T &)> f) const {
             f(node);
             for (auto &c: _children)
                 c.apply_dfs(f);
         }
+
         void apply_dfs(std::function<void(const tree<T> &)> f) const {
             f(*this);
             for (auto &c: _children)
                 c.apply_dfs(f);
         }
+
         auto parent() const -> std::optional<tree<T>*> {
             if(p) return {p};
             return {};
         }
+
         auto children() const -> const children_t& {
             return _children;
         }
+
         auto begin() -> _left_df_iterator {
             return _left_df_iterator{*this};
         }
+
         auto end() -> _left_df_iterator {
             return _left_df_iterator{*this, std::vector<size_t>{{_children.size()}}};
         }
@@ -200,9 +295,12 @@ namespace ya {
     private:
         children_t _children;
         tree<T>* p;
+        size_t parent_index;
 
-        void set_parent(tree<T>* new_parent) {
+        auto set_parent(tree<T>* new_parent, size_t index) -> tree<T>& {
             p = new_parent;
+            parent_index = index;
+            return *this;
         }
     };
 
