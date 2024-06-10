@@ -22,11 +22,12 @@
  */
 #ifndef YATREE_TREE_H
 #define YATREE_TREE_H
+#include <stdexcept>
 #include <utility>
 #include <vector>
 #include <optional>
 #include <functional> // std::reference_wrapper
-#include <stack>
+#include <algorithm>
 
 namespace ya {
     template<typename T>
