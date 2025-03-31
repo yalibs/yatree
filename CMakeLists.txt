@@ -19,9 +19,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-cmake_minimum_required(VERSION 3.5)
-project(yatree VERSION 1.2.3)
-set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required(VERSION 3.11)
+project(yatree VERSION 1.2.4)
+set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD_REQUIRED ON)
 include_directories(include)
 add_executable(${PROJECT_NAME}_demo src/demo.cpp)
